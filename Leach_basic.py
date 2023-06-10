@@ -76,9 +76,40 @@ for i in range(num):
 for node1 in nodes:
     for node2 in nodes:
         if node2 != node1:
-            while(distance(node1, node2) < 10):
-                node2.x = random.uniform(0, 100)
-                node2.y = random.uniform(0, 100)
+            dist = distance(node1, node2)
+            while(dist < 10):
+                radius = random.uniform(11, 20)
+                if node2.x > node1.x:
+                    if node2.y > node1.y:
+                        angle = random.uniform(- math.pi/2, math.pi)
+                    elif node2.y < node1.y:
+                        angle = random.uniform(- math.pi, 1/2 * math.pi)
+                    elif node2.y == node1.y:
+                        angle = random.uniform(- math.pi/2, 1/2 * math.pi)
+                elif node2.x < node1.x:
+                    if node2.y > node1.y:
+                        angle = random.uniform(0, 3/2 * math.pi)
+                    elif node2.y < node1.y:
+                        angle = random.uniform(math.pi/2, 2 * math.pi)
+                    elif node2.y == node1.y:
+                        angle = random.uniform(math.pi/2, 3/2 * math.pi)
+                elif node2.x == node1.x:
+                    if node2.y > node1.y:
+                        angle = random.uniform(0, math.pi)
+                    elif node2.y < node1.y:
+                        angle = random.uniform(math.pi, 2 * math.pi)
+
+                node2.x = node1.x + radius * math.cos(angle)
+                node2.y = node1.y + radius * math.sin(angle)
+
+                # if node1.x > node2.x :
+                # angle = random.uniform(0, 2*math.pi)
+                # radius = random.uniform(10, 20)
+                # node2.x = node1.x + radius * math.cos(angle)
+                # node2.x = node1.y + radius * math.sin(angle)
+                # node2.x = random.uniform(0, 100)
+                # node2.y = random.uniform(0, 100)
+                dist = distance(node1, node2)
             G.nodes[node2.id]["x"] = node2.x
             G.nodes[node2.id]["y"] = node2.y    
 
@@ -176,6 +207,10 @@ for r in range(rounds):
             if G.nodes[node]["id"] == 7:
                 G.nodes[node]["dead"] = True
     update_G(r)
+    for node1 in nodes:
+        for node2 in nodes:
+            if distance(node1, node2) < node1.comm_range and node1 != node2:
+                G.add_edge(node1.id, node2.id)
     node_colors = ["red" if G.nodes[node]["dead"] else "lightgreen" if G.nodes[node].get("cluster_head", False) else "lightblue" for node in G.nodes]
     pos = {node: (G.nodes[node].get("x"), G.nodes[node].get("y")) for node in G.nodes if G.nodes[node].get("x") is not None and G.nodes[node].get("y") is not None}
     
@@ -187,7 +222,7 @@ for r in range(rounds):
 
     for node, (x, y) in pos.items():
         comm_range = G.nodes[node].get("comm_range", 5)
-        circle = plt.Circle((x, y), comm_range, edgecolor="red", facecolor="none", linestyle="--")
+        circle = plt.Circle((x, y), comm_range, edgecolor="pink", facecolor="none", linestyle="--")
         ax.add_patch(circle)
     
     labels = {node: node for node in G.nodes}
@@ -198,10 +233,6 @@ for r in range(rounds):
     plt.axis("off")
     plt.show()
 
-
-    # nx.draw(G, pos, with_labels=True, node_size=200, node_color=node_colors, edge_color="black")
-    # plt.show()
-
     for node in G.nodes:
         # if G.nodes[node].get("dead", True) == True:
             # G.remove_node(node)
@@ -210,16 +241,3 @@ for r in range(rounds):
     for node in nodes:
         node.cluster_head = False
     G.remove_edges_from(list(G.edges()))
-
-    # node_colors = ["lightgreen" if node.cluster_head else "lightblue" for node in G.nodes]
-    # pos = {node.id: (node.x, node.y) for node in G.nodes}
-    # nx.draw(G, pos, with_labels=True, node_size=200, node_color=node_colors)
-    # plt.show()
-
-# for node in nodes:
-    # print("Node", node.id, "Energy:", node.energy)
-
-# node_colors = ["green" if G.nodes[node]["CH"] else "lightblue" for node in G.nodes]
-# pos = {node: (G.nodes[node]["x"], G.nodes[node]["y"]) for node in G.nodes}
-# nx.draw(G, pos, with_labels=True, node_size=200, node_color=node_colors)
-# plt.show()
