@@ -4,9 +4,9 @@ import networkx as nx
 import matplotlib.pyplot as plt
 import tkinter as tk
 
-num = 15 # Number of nodes
-rounds = 20 # Number of rounds
-p = 0.1 # Initial CH selection probability
+num = 25 # Number of nodes
+rounds = 30 # Number of rounds
+p = 0.2 # Initial CH selection probability
 Eo = 1 # Initial energy of nodes
 Et = Eo # Total energy
 # k = math.ceil(n * p) # Number of cluster heads per round
@@ -17,9 +17,19 @@ E_elec = 50 * 0.00001
 E_fs = 50 * 0.00001
 ETX = 50 * 0.00001
 ERX = 50 * 0.00001
-min_CHs = 2 # minimum number of CHs in network
-max_CHs = 6 # maximum number of CHs in network
-bits = 128 # length of data transmitted
+a = 0.2 * num
+b = 0.4 * num
+min_CHs = math.ceil(a)
+max_CHs = math.ceil(b)
+# x_min = 0
+# x_max = 0
+# y_min = 200
+# y_max = 200
+# a = 0,3 * num
+# b = 0,5 * num
+# # min_CHs = math.ceil(a) # minimum number of CHs in network
+# # max_CHs = math.ceil(b) # maximum number of CHs in network
+# bits = 128 # length of data transmitted
 dead_IDs = []
 node_attributes = []
 G = nx.Graph()
@@ -33,15 +43,17 @@ class Node:
         self.cluster_head = False
         self.cluster_id = None
         self.dead = False
-        self.comm_range = 10
-        self.Tk = p / (1 - p * (1 % (1 / p)))  # CH election probability in round 1
+        self.comm_range = 20
+        self.Tk = p / (1 - p * (1.0 % (1 / p)))  # CH election probability in round 1
         self.CHr = -1
-    
     # def set_CHr(self, round):
     #     self.CHr = round
 
 nodes = [] # total nodes
 norm_nodes = [] # nodes haven't been become CH in the last [1/p] rounds
+
+def distance(node1, node2):
+    return math.sqrt((node1.x - node2.x)**2 + (node1.y - node2.y)**2)
 
 for i in range(num):
     x = random.uniform(0, 100)
@@ -54,11 +66,22 @@ for i in range(num):
     nodes.append(node)
     norm_nodes.append(node)
     G.add_node(i, **attributes)
+# x_min -= node.comm_range
+# x_max += node.comm_range
+# y_min -= node.comm_range
+# y_min += node.comm_range
+# print("{} {} {} {}".format(x_min, x_max, y_min, y_max))
 # for node in G.nodes:
     # print("Node {}: x={}, y={}".format(node, G.nodes[node].get("x"), G.nodes[node].get("y")))
+for node1 in nodes:
+    for node2 in nodes:
+        if node2 != node1:
+            while(distance(node1, node2) < 10):
+                node2.x = random.uniform(0, 100)
+                node2.y = random.uniform(0, 100)
+            G.nodes[node2.id]["x"] = node2.x
+            G.nodes[node2.id]["y"] = node2.y    
 
-def distance(node1, node2):
-    return math.sqrt((node1.x - node2.x)**2 + (node1.y - node2.y)**2)
 
 def select_CH(round):
     # CH_id = []
@@ -104,10 +127,9 @@ def update_Tk(round):
         if node not in norm_nodes:
             node.Tk = 0
         else:
-            node.Tk = p / (1 - p * (round % (1 / p)))
+            node.Tk = p / (1 - p * (float(round) % (1/ p)))
 
 def form_clusters():
-
     clusters.clear()
     for node in nodes:
         if node.cluster_head:
@@ -122,7 +144,7 @@ def form_clusters():
             if distance_to_CH < min_distance:
                 min_distance = distance_to_CH
                 closest_CH = CH_node
-        if min_distance <= (2 * node.comm_range):
+        if min_distance <= (node.comm_range):
             G.add_edge(node.id, closest_CH.id)           
 
 def round_simulation():
