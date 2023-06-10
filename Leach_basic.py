@@ -4,13 +4,13 @@ import networkx as nx
 import matplotlib.pyplot as plt
 import tkinter as tk
 
-num = 25 # Number of nodes
+num = 30 # Number of nodes
 rounds = 30 # Number of rounds
 p = 0.2 # Initial CH selection probability
 Eo = 1 # Initial energy of nodes
 Et = Eo # Total energy
 # k = math.ceil(n * p) # Number of cluster heads per round
-CH_id = [] # store CH_id
+CH_nodes = [] # store CH_nodes
 clusters = [] # List to store clusters
 E_broadcast = 50 * 0.00001
 E_elec = 50 * 0.00001
@@ -21,14 +21,6 @@ a = 0.2 * num
 b = 0.4 * num
 min_CHs = math.ceil(a)
 max_CHs = math.ceil(b)
-# x_min = 0
-# x_max = 0
-# y_min = 200
-# y_max = 200
-# a = 0,3 * num
-# b = 0,5 * num
-# # min_CHs = math.ceil(a) # minimum number of CHs in network
-# # max_CHs = math.ceil(b) # maximum number of CHs in network
 # bits = 128 # length of data transmitted
 dead_IDs = []
 node_attributes = []
@@ -58,73 +50,35 @@ def distance(node1, node2):
 for i in range(num):
     x = random.uniform(0, 100)
     y = random.uniform(0, 100)
-    # print("Node {}: x={}, y={}".format(i,x,y))
     node = Node(i, x, y)
     attributes = {"id": i, "x": x, "y": y, "comm_range": node.comm_range, "cluster_head": False, "dead": False}
-    
-    # print("Node {}: x={}, y={}".format(node.id,node.x,node.y))
     nodes.append(node)
     norm_nodes.append(node)
     G.add_node(i, **attributes)
-# x_min -= node.comm_range
-# x_max += node.comm_range
-# y_min -= node.comm_range
-# y_min += node.comm_range
-# print("{} {} {} {}".format(x_min, x_max, y_min, y_max))
-# for node in G.nodes:
-    # print("Node {}: x={}, y={}".format(node, G.nodes[node].get("x"), G.nodes[node].get("y")))
 for node1 in nodes:
-    for node2 in nodes:
-        if node2 != node1:
+    next_nodes = [node for node in nodes if node.id > node1.id]
+    for node2 in next_nodes:
             dist = distance(node1, node2)
-            while(dist < 10):
-                radius = random.uniform(11, 20)
-                if node2.x > node1.x:
-                    if node2.y > node1.y:
-                        angle = random.uniform(- math.pi/2, math.pi)
-                    elif node2.y < node1.y:
-                        angle = random.uniform(- math.pi, 1/2 * math.pi)
-                    elif node2.y == node1.y:
-                        angle = random.uniform(- math.pi/2, 1/2 * math.pi)
-                elif node2.x < node1.x:
-                    if node2.y > node1.y:
-                        angle = random.uniform(0, 3/2 * math.pi)
-                    elif node2.y < node1.y:
-                        angle = random.uniform(math.pi/2, 2 * math.pi)
-                    elif node2.y == node1.y:
-                        angle = random.uniform(math.pi/2, 3/2 * math.pi)
-                elif node2.x == node1.x:
-                    if node2.y > node1.y:
-                        angle = random.uniform(0, math.pi)
-                    elif node2.y < node1.y:
-                        angle = random.uniform(math.pi, 2 * math.pi)
-
-                node2.x = node1.x + radius * math.cos(angle)
-                node2.y = node1.y + radius * math.sin(angle)
-
-                # if node1.x > node2.x :
-                # angle = random.uniform(0, 2*math.pi)
-                # radius = random.uniform(10, 20)
-                # node2.x = node1.x + radius * math.cos(angle)
-                # node2.x = node1.y + radius * math.sin(angle)
-                # node2.x = random.uniform(0, 100)
-                # node2.y = random.uniform(0, 100)
-                dist = distance(node1, node2)
+            while(dist < 15):
+                node2.x = random.uniform(0, 100)
+                node2.y = random.uniform(0, 100)
+                dist = min(distance(node2, other_node) for other_node in nodes if other_node != node2)
             G.nodes[node2.id]["x"] = node2.x
             G.nodes[node2.id]["y"] = node2.y    
 
 
 def select_CH(round):
-    # CH_id = []
     for node in norm_nodes:
         temp = random.uniform(0,1)
-        if temp < node.Tk and len(CH_id) < max_CHs:
+        dist = float('inf')
+        if len(CH_nodes) != 0:
+            dist = min(distance(node, CH_node) for CH_node in CH_nodes if node != CH_node)
+        if temp < node.Tk and len(CH_nodes) < max_CHs and dist > 20:
             node.cluster_head = True
             G.nodes[node.id]['cluster_head'] = True
             node.cluster_id = node.id
-            CH_id.append(node.id)
+            CH_nodes.append(node)
             node.CHr = round
-            # if node in norm_nodes:
             norm_nodes.remove(node)
         else:
             node.cluster_head = False
@@ -194,12 +148,12 @@ def round_simulation():
         
 
 for r in range(rounds):
-    CH_id = []
+    CH_nodes = []
     print("Round", r)
     update_Tk(r)
-    while(len(CH_id) == 0 or len(CH_id) < min_CHs):
+    while(len(CH_nodes) == 0 or len(CH_nodes) < min_CHs):
         select_CH(r)
-    # print(CH_id)
+    # print(CH_nodes)
     form_clusters()
     round_simulation()
     if r == 7:
