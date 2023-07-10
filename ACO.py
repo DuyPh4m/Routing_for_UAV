@@ -1,5 +1,8 @@
 import numpy as np
 
+# num_ants starts from 10 to 20
+# evaporation_rate between 0.1 and 0.5
+
 class AntColonyOptimization:
     def __init__(self, num_ants, num_iterations, pheromone_weight, heuristic_weight, evaporation_rate):
         self.num_ants = num_ants
@@ -8,14 +11,14 @@ class AntColonyOptimization:
         self.heuristic_weight = heuristic_weight
         self.evaporation_rate = evaporation_rate
 
-    def find_optimal_path(self, distance_matrix):
+    def find_optimal_path(self, distance_matrix, sink_node):
         num_nodes = distance_matrix.shape[0]
         pheromone_matrix = np.ones((num_nodes, num_nodes))
         best_path = None
         best_distance = np.inf
 
         for iteration in range(self.num_iterations):
-            ant_paths = self.construct_ant_paths(distance_matrix, pheromone_matrix)
+            ant_paths = self.construct_ant_paths(distance_matrix, pheromone_matrix, sink_node)
             self.update_pheromone_matrix(pheromone_matrix, ant_paths)
             
             # Find the best ant path
@@ -30,7 +33,7 @@ class AntColonyOptimization:
 
         return best_path, best_distance
 
-    def construct_ant_paths(self, distance_matrix, pheromone_matrix):
+    def construct_ant_paths(self, distance_matrix, pheromone_matrix, sink_node):
         num_nodes = distance_matrix.shape[0]
         ant_paths = []
 
@@ -48,6 +51,7 @@ class AntColonyOptimization:
                 visited[next_node] = True
                 current_node = next_node
 
+            path.append(sink_node)
             ant_paths.append(path)
 
         return ant_paths
@@ -92,8 +96,9 @@ distance_matrix = np.array([[0, 2, 4, 5],
                             [4, 7, 0, 8],
                             [5, 3, 8, 0]])
 
+sink_node = distance_matrix.shape[0] - 1
 aco = AntColonyOptimization(num_ants=10, num_iterations=100, pheromone_weight=1.0, heuristic_weight=2.0, evaporation_rate=0.5)
-best_path, best_distance = aco.find_optimal_path(distance_matrix)
+best_path, best_distance = aco.find_optimal_path(distance_matrix, sink_node)
 
 print("Best path:", best_path)
 print("Best distance:", best_distance)
