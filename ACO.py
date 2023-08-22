@@ -1,104 +1,104 @@
+import random as rn
 import numpy as np
+from numpy.random import choice as np_choice
 
-# num_ants starts from 10 to 20
-# evaporation_rate between 0.1 and 0.5
+class AntColonyOptimization(object):
 
-class AntColonyOptimization:
-    def __init__(self, num_ants, num_iterations, pheromone_weight, heuristic_weight, evaporation_rate):
-        self.num_ants = num_ants
-        self.num_iterations = num_iterations
-        self.pheromone_weight = pheromone_weight
-        self.heuristic_weight = heuristic_weight
-        self.evaporation_rate = evaporation_rate
+    def __init__(self, distances, n_ants, n_best, n_iterations, decay, alpha=1, beta=1):
+        """
+        Args:
+            distances (2D numpy.array): Square matrix of distances. Diagonal is assumed to be np.inf.
+            n_ants (int): Number of ants running per iteration
+            n_best (int): Number of best ants who deposit pheromone
+            n_iteration (int): Number of iterations
+            decay (float): Rate it which pheromone decays. The pheromone value is multiplied by decay, so 0.95 will lead to slower decay, 0.5 to much faster decay.
+            alpha (int or float): exponenet on pheromone, higher alpha gives pheromone more weight. Default=1
+            beta (int or float): exponent on distance, higher beta give distance more weight. Default=1
 
-    def find_optimal_path(self, distance_matrix, sink_node):
-        num_nodes = distance_matrix.shape[0]
-        pheromone_matrix = np.ones((num_nodes, num_nodes))
-        best_path = None
-        best_distance = np.inf
+        Example:
+            ant_colony = AntColony(german_distances, 100, 20, 2000, 0.95, alpha=1, beta=2)          
+        """
+        self.distances  = distances
+        self.pheromone = np.ones(self.distances.shape) / len(distances)
+        self.all_inds = range(len(distances))
+        self.n_ants = n_ants
+        self.n_best = n_best
+        self.n_iterations = n_iterations
+        self.decay = decay
+        self.alpha = alpha
+        self.beta = beta
 
-        for iteration in range(self.num_iterations):
-            ant_paths = self.construct_ant_paths(distance_matrix, pheromone_matrix, sink_node)
-            self.update_pheromone_matrix(pheromone_matrix, ant_paths)
-            
-            # Find the best ant path
-            for path in ant_paths:
-                distance = self.calculate_path_distance(path, distance_matrix)
-                if distance < best_distance:
-                    best_path = path
-                    best_distance = distance
+    def Run(self):
+        shortest_path = None
+        all_time_shortest_path = ("placeholder", np.inf)
+        for i in range(self.n_iterations):
+            all_paths = self.gen_all_paths()
+            if all_paths == -1:
+                print("error")
+                return -1
+            self.spread_pheronome(all_paths, self.n_best, shortest_path=shortest_path)
+            shortest_path = min(all_paths, key=lambda x: x[1])
+            print (shortest_path)
+            if shortest_path[1] < all_time_shortest_path[1]:
+                all_time_shortest_path = shortest_path            
+            self.pheromone = self.pheromone * self.decay            
+        return all_time_shortest_path
 
-            # Evaporate pheromones
-            pheromone_matrix *= (1 - self.evaporation_rate)
+    def spread_pheronome(self, all_paths, n_best, shortest_path):
+        sorted_paths = sorted(all_paths, key=lambda x: x[1])
+        for path, dist in sorted_paths[:n_best]:
+            for move in path:
+                self.pheromone[move] += 1.0 / self.distances[move]
 
-        return best_path, best_distance
+    def gen_path_dist(self, path):
+        total_dist = 0
+        for ele in path:
+            total_dist += self.distances[ele]
+        return total_dist
 
-    def construct_ant_paths(self, distance_matrix, pheromone_matrix, sink_node):
-        num_nodes = distance_matrix.shape[0]
-        ant_paths = []
+    def gen_all_paths(self):
+        all_paths = []
+        for i in range(self.n_ants):
+            path = self.gen_path(0)
+            if path == -1:
+                print("error")
+                return -1
+            all_paths.append((path, self.gen_path_dist(path)))
+        return all_paths
 
-        for ant in range(self.num_ants):
-            visited = np.zeros(num_nodes, dtype=bool)
-            path = []
-            current_node = np.random.randint(num_nodes)
-            path.append(current_node)
-            visited[current_node] = True
+    def gen_path(self, start):
+        path = []
+        visited = set()
+        visited.add(start)
+        prev = start
+        for i in range(len(self.distances) - 1):
+            move = self.pick_move(self.pheromone[prev], self.distances[prev], visited)
+            if move == -1:
+                print("cant gen path")
+                return -1
+            path.append((prev, move))
+            prev = move
+            visited.add(move)
+        # path.append((prev, start)) # going back to where we started    
+        return path
 
-            while len(path) < num_nodes:
-                probabilities = self.calculate_transition_probabilities(current_node, visited, distance_matrix, pheromone_matrix)
-                next_node = np.random.choice(np.arange(num_nodes), p=probabilities)
-                path.append(next_node)
-                visited[next_node] = True
-                current_node = next_node
+    def pick_move(self, pheromone, dist, visited):
+        pheromone = np.copy(pheromone)
+        pheromone[list(visited)] = 0
+        print("pheromone")
+        print(pheromone)
+        print("dist")
+        print(dist)
+        row = pheromone ** self.alpha * (( 1.0 / dist) ** self.beta)
+        print("row")
+        print(row)
+        if row.any() != 0:
+            norm_row = row / row.sum()
+        if np.all(row == 0):
+            print("cant go further")
+            return -1
+        print("norm_row")
+        print(norm_row)
+        move = np_choice(self.all_inds, 1, p=norm_row)[0]
+        return move
 
-            path.append(sink_node)
-            ant_paths.append(path)
-
-        return ant_paths
-
-    
-    def calculate_transition_probabilities(self, current_node, visited, distance_matrix, pheromone_matrix):
-        num_nodes = distance_matrix.shape[0]
-        unvisited_nodes = np.where(~visited)[0]
-        pheromone_values = pheromone_matrix[current_node, unvisited_nodes]
-        heuristic_values = 1.0 / distance_matrix[current_node, unvisited_nodes]
-    
-        probabilities = np.zeros(num_nodes)
-        probabilities[unvisited_nodes] = (pheromone_values**self.pheromone_weight) * (heuristic_values**self.heuristic_weight)
-        probabilities /= np.sum(probabilities)
-    
-        return probabilities
-
-
-    def update_pheromone_matrix(self, pheromone_matrix, ant_paths):
-        num_nodes = pheromone_matrix.shape[0]
-
-        for path in ant_paths:
-            for i in range(num_nodes - 1):
-                current_node = path[i]
-                next_node = path[i+1]
-                pheromone_matrix[current_node, next_node] += 1
-                pheromone_matrix[next_node, current_node] += 1  # Add this line to update both directions
-
-
-    def calculate_path_distance(self, path, distance_matrix):
-        distance = 0
-
-        for i in range(len(path) - 1):
-            current_node = path[i]
-            next_node = path[i+1]
-            distance += distance_matrix[current_node, next_node]
-
-        return distance
-# Example usage
-distance_matrix = np.array([[0, 2, 4, 5],
-                            [2, 0, 7, 3],
-                            [4, 7, 0, 8],
-                            [5, 3, 8, 0]])
-
-sink_node = distance_matrix.shape[0] - 1
-aco = AntColonyOptimization(num_ants=10, num_iterations=100, pheromone_weight=1.0, heuristic_weight=2.0, evaporation_rate=0.5)
-best_path, best_distance = aco.find_optimal_path(distance_matrix, sink_node)
-
-print("Best path:", best_path)
-print("Best distance:", best_distance)

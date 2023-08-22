@@ -2,7 +2,9 @@ import random
 import math
 import networkx as nx
 import matplotlib.pyplot as plt
-from itertools import combinations
+import numpy as np
+from array import *
+from ACO import AntColonyOptimization
 
 num = 30 # Number of nodes
 rounds = 30 # Number of rounds
@@ -31,7 +33,6 @@ CH_nodes = [] # store CH_nodes
 clusters = [] # List to store clusters
 
 G = nx.Graph()
-
 
 class Node:
     def __init__(self, id, x, y):
@@ -74,15 +75,6 @@ def generate_nodes():
 
 def select_CH(round):
     global norm_nodes, CH_nodes
-    # while len(norm_nodes) < min_CHs:
-    #     smallest_CHr = float('inf')
-    #     for node in nodes: 
-    #         if node.CHr >= 0 and node.CHr < smallest_CHr:
-    #             smallest_CHr = node.CHr
-    #     for node in nodes:
-    #         if node.CHr == smallest_CHr:
-    #             if node not in norm_nodes:
-    #                 norm_nodes.append(node)
     for node in norm_nodes:
         temp = random.uniform(0,1)
         dist = float('inf')
@@ -137,7 +129,6 @@ def form_clusters():
     for node in nodes:
         if node.cluster_head:
             clusters.append([node])
-    # CH_nodes = [node for node in nodes if node.cluster_head]
     non_CH_nodes = [node for node in nodes if node not in CH_nodes]
     for node in non_CH_nodes:
         min_distance = float('inf')
@@ -149,8 +140,7 @@ def form_clusters():
                 closest_CH = CH_node
                 if min_distance <= CH_node.sens_range:
                     node.cluster_id = CH_node.id
-        if min_distance <= (node.sens_range) and node.cluster_id == closest_CH.id: # and node.cluster_head == False:
-            # cluster_edge_list.append((closest_CH.id, node.id))    
+        if min_distance <= (node.sens_range) and node.cluster_id == closest_CH.id:
             G.add_edge(node.id, closest_CH.id, style='solid', edge_color='green')           
 
 def round_simulation():
@@ -162,7 +152,6 @@ def round_simulation():
         for node in members:
             node.energy -= ETX
             cluster_head.energy -= ERX 
-        # print("Cluster head ID: {}, energy: {}".format(cluster_head.id, cluster_head.energy))
 
 def select_additional_CH(round):
     global nodes, CH_nodes, G, H
@@ -208,6 +197,28 @@ def select_additional_CH(round):
             G.add_edge(CH_node.id, chosen_one.id, style='solid', edge_color='blue')
     return True
 
+def ACO_Simulation(CH_nodes):
+    distances = []
+    for CH_node1 in CH_nodes:
+        dist = []
+        for CH_node2 in CH_nodes:
+            temp = distance(CH_node1, CH_node2)
+            if 0 < temp < CH_node1.comm_range:
+                dist.append(temp)
+            else:
+                dist.append(np.inf)
+        distances.append(dist)
+    print(distances)
+    distances_matrix = np.array(distances)
+    ant_colony = AntColonyOptimization(distances_matrix, 1, 1, 100, 0.95, alpha=1, beta=1)
+    shortest_path = ant_colony.Run()
+    if shortest_path == -1:
+        print("error")
+        return -1
+    print ("shorted_path: {}".format(shortest_path))
+    # sink_node = distance_matrix.shape[0] - 1
+    # aco = AntColonyOptimization(num_ants=10, num_iterations=100, pheromone_weight=1.0, heuristic_weight=2.0, evaporation_rate=0.5)
+
 generate_nodes()
 print("min: {}, max: {}".format(min_CHs, max_CHs))
 for round in range(rounds):
@@ -215,48 +226,41 @@ for round in range(rounds):
     update_norm_nodes(round)
     print("Normal nodes:")
     for node in norm_nodes:
-        print(node.id)
+        print(node.id),
     update_Tk(round)
-    # print("1")
-    
+        
     print("begin selection")
     while(len(CH_nodes) < min_CHs):
         select_CH(round)  
     print("end selection")
     print("Initial CH nodes: ")
     for CH_node in CH_nodes:
-        print(CH_node.id)
+        print(CH_node.id),
 
     form_clusters()
     H = nx.Graph()
     H.add_nodes_from(CH_nodes)
     update_norm_nodes(round)
     
-    # CH_nodes = [node for node in nodes if node.cluster_head]
     for CH_node1 in CH_nodes:
         next_CH_nodes = [node for node in CH_nodes if node.id > CH_node1.id]
         for CH_node2 in next_CH_nodes:
-            if distance(CH_node1, CH_node2) < CH_node1.comm_range: #and CH_node1 != CH_node2:
-                # CH_edge_list.append((node1.id, node2.id))
+            if distance(CH_node1, CH_node2) < CH_node1.comm_range:
                 H.add_edge(CH_node1, CH_node2)
                 G.add_edge(CH_node1.id, CH_node2.id, style='solid', edge_color='red')
     
     while(nx.is_connected(H) == False):
         if not select_additional_CH(round):
             break
+
+    ACO_Simulation(CH_nodes)
+
     round_simulation()
-    print(H)
+    print(H),
     print("CH nodes:")
     for CH_node in CH_nodes:
-        print(CH_node.id)
+        print(CH_node.id),
     
-    # # H.add_edges_from(CH_edge_list)
-    # components = nx.connected_components(H)
-    # for component in components:
-    #     for node in component:
-    #         print(node.id)
-    #     print("end component")
-
     edge_styles = [G[u][v]['style'] for u, v in G.edges()]
     edge_colors = [G[u][v]['edge_color'] for u, v in G.edges()]
 
@@ -286,6 +290,10 @@ for round in range(rounds):
     plt.ylim(-50, 150)
     plt.axis("off")
     plt.show()
+
+    # ACO_Simulation(CH_nodes)
+
+    # round_simulation()
 
     CH_nodes.clear()
     for node in G.nodes:
