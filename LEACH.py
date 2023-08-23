@@ -80,18 +80,19 @@ class LeachProtocol(object):
         for CH_node in self.data.CH_nodes:
             self.clusters.append([CH_node])
 
-        for node in self.data.norm_nodes:
-            min_dis = float('inf')
-            closest = None
-            
-            for CH_node in self.data.CH_nodes:
-                curr_dis = distance(node, CH_node)
-                if curr_dis < min_dis:
-                    min_dis = curr_dis
-                    closest = CH_node
-            
-            if min_dis <= node.sens_range:
-                node.cluster_ID = closest.id
+        for node in self.data.nodes:
+            if node.isCH == False:
+                min_dis = float('inf')
+                closest = None
+                
+                for CH_node in self.data.CH_nodes:
+                    curr_dis = distance(node, CH_node)
+                    if curr_dis < min_dis:
+                        min_dis = curr_dis
+                        closest = CH_node
+                
+                if min_dis <= node.sens_range:
+                    node.cluster_ID = closest.id
                     
 
     # def AddCH():
