@@ -30,52 +30,6 @@ class Simulation(object):
             self.Draw()
             self.Data_Reset()
 
-    def GenerateNodes(self):
-
-        x = random.uniform(0, 100)
-        y = random.uniform(0, 100)
-
-        node = Node(0, x, y)
-
-        self.data.nodes.append(node)
-        self.data.norm_nodes.append(node)
-
-        for i in range(self.num - 1):
-
-            while True:
-
-                dist = random.uniform(15, 30)
-                angle = random.uniform(0, 2 * math.pi)
-
-                dx = dist * math.cos(angle)
-                dy = dist * math.sin(angle)
-
-                k = random.randint(0, len(self.data.nodes) - 1)
-
-                x = self.data.nodes[k].x + dx
-                y = self.data.nodes[k].y + dy
-
-                if x > 100 or y > 100:
-                    continue
-
-                valid = True
-
-                for node in self.data.norm_nodes:
-
-                    dx = node.x - x 
-                    dy = node.y - y
-                    dist_between = math.sqrt(dx**2 + dy**2)
-
-                    if dist_between < 15 or dist_between > 30:
-                        valid = False
-                        break
-                
-                if valid:
-                    node = Node(i + 1, x, y)
-                    self.data.nodes.append(node)
-                    self.data.norm_nodes.append(node)
-                    break
-
     def Generate_Nodes(self):
             
         for i in range(5):
@@ -109,16 +63,36 @@ class Simulation(object):
     def Add_CHs(self):
 
         H = nx.Graph()
-        
+
         for CH_node in self.data.CH_nodes:
             H.add_node(CH_node.id, x=CH_node.x, y=CH_node.y, comm_range=CH_node.comm_range)
         
         for CH_node1 in self.data.CH_nodes:
             for CH_node2 in self.data.CH_nodes:
                 if CH_node1 != CH_node2 and distance(CH_node1, CH_node2) < CH_node1.comm_range:
-                    H.add_edge(CH_node1.id, CH_node2.id)
+                    H.add_edge(CH_node1, CH_node2)
 
-        # while (nx.is_connected(H) == False)
+        while nx.is_connected(H) == False:
+            isolates = [node for node in self.data.norm_nodes if node.cluster_ID == None]
+
+            if len(isolates) == 0:
+                return False
+            
+            top_overlap = 0
+            chosen_one = None
+
+            for isolate in isolates:
+                temp = 0
+
+                for CH_node in self.data.CH_nodes:
+                    if distance(isolate, CH_node) <= CH_node.comm_range:
+                        temp += 1
+
+                if temp > top_overlap:
+                    top_overlap = temp
+                    chosen_one = isolate
+            
+
         #     print
 
     def Draw(self):
@@ -179,8 +153,8 @@ class Simulation(object):
 
     def Data_Reset(self):
 
-        for CH_node in self.data.CH_nodes:
-            CH_node.isCH = False
-            CH_node.cluster_ID = None
+        for node in self.data.CH_nodes:
+            node.isCH = False
+            node.cluster_ID = None
 
         self.data.CH_nodes.clear()

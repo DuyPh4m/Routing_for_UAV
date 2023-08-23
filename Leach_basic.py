@@ -158,17 +158,15 @@ def select_additional_CH(round):
     isolates = [node for node in nodes if node not in CH_nodes and node.cluster_id == None]
     ovlp_highest = 0
     chosen_one = None
-    print("Isolates: ")
-    for node in isolates:
-        print(node.id)
+
     if len(isolates) <= 0:
         return False
     if len(isolates) > 0:
         for node in isolates:
             temp = 0
-        for CH_node in CH_nodes:
-            if distance(node, CH_node) <= CH_node.comm_range:
-                temp += 1
+            for CH_node in CH_nodes:
+                if distance(node, CH_node) <= CH_node.comm_range:
+                    temp += 1
         if temp > ovlp_highest:
             ovlp_highest = temp
             chosen_one = node
