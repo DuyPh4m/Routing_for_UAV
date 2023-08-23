@@ -1,6 +1,3 @@
-import random
-from Calculation import *
-
 class Node(object):
     def __init__(self, id, x, y):
         self.id = id
@@ -11,5 +8,5 @@ class Node(object):
         self.comm_range = 50
         self.dead = False
         self.isCH = False
-        self.Tk = None
+        self.Tk = 0.2 / (1 - 0.2 * (1.0 % (1 / 0.2)))
         self.was_CH_in = -1

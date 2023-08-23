@@ -276,8 +276,8 @@ for round in range(rounds):
     
     for node, (x, y) in pos.items():
         if G.nodes[node]["cluster_head"] == True:
-            sens_range = G.nodes[node].get("sens_range", 5)
-            comm_range = G.nodes[node].get("comm_range", 5)
+            sens_range = G.nodes[node].get("sens_range")
+            comm_range = G.nodes[node].get("comm_range")
             sens_circle = plt.Circle((x, y), sens_range, edgecolor="green", facecolor="none", linestyle="--")
             comm_circle = plt.Circle((x, y), comm_range, edgecolor="pink", facecolor="none", linestyle="--")
             ax.add_patch(sens_circle)
