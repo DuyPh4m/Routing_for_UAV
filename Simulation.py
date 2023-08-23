@@ -28,6 +28,7 @@ class Simulation(object):
             # self.ant_colony.Run()
 
             self.Draw()
+            self.Data_Reset()
 
     def GenerateNodes(self):
 
@@ -105,6 +106,21 @@ class Simulation(object):
                         self.data.norm_nodes.append(node)
                         break
 
+    def Add_CHs(self):
+
+        H = nx.Graph()
+        
+        for CH_node in self.data.CH_nodes:
+            H.add_node(CH_node.id, x=CH_node.x, y=CH_node.y, comm_range=CH_node.comm_range)
+        
+        for CH_node1 in self.data.CH_nodes:
+            for CH_node2 in self.data.CH_nodes:
+                if CH_node1 != CH_node2 and distance(CH_node1, CH_node2) < CH_node1.comm_range:
+                    H.add_edge(CH_node1.id, CH_node2.id)
+
+        # while (nx.is_connected(H) == False)
+        #     print
+
     def Draw(self):
 
         G = nx.Graph()
@@ -160,3 +176,11 @@ class Simulation(object):
         plt.ylim(-50, 150)
         plt.axis("off")
         plt.show()
+
+    def Data_Reset(self):
+
+        for CH_node in self.data.CH_nodes:
+            CH_node.isCH = False
+            CH_node.cluster_ID = None
+
+        self.data.CH_nodes.clear()

@@ -222,20 +222,12 @@ def ACO_Simulation(CH_nodes):
 generate_nodes()
 print("min: {}, max: {}".format(min_CHs, max_CHs))
 for round in range(rounds):
-    print("Round", round)
     update_norm_nodes(round)
-    print("Normal nodes:")
-    for node in norm_nodes:
-        print(node.id),
     update_Tk(round)
         
-    print("begin selection")
+    
     while(len(CH_nodes) < min_CHs):
         select_CH(round)  
-    print("end selection")
-    print("Initial CH nodes: ")
-    for CH_node in CH_nodes:
-        print(CH_node.id),
 
     form_clusters()
     H = nx.Graph()
