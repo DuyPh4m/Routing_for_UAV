@@ -113,7 +113,7 @@ class Simulation(object):
 
             for CH_node in self.data.CH_nodes:
                 if CH_node != chosen_one and distance(CH_node, chosen_one) <= CH_node.comm_range:
-                    H.add_edge(CH_node, chosen_one)
+                    H.add_edge(CH_node.id, chosen_one.id)
 
     def Add_CHs_2(self, round):
 
