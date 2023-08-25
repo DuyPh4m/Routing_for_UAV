@@ -1,5 +1,5 @@
 class Node(object):
-    def __init__(self, id, x, y):
+    def __init__(self, id, x, y, p=0):
         self.id = id
         self.x = x
         self.y = y
@@ -8,5 +8,8 @@ class Node(object):
         self.comm_range = 50
         self.dead = False
         self.isCH = False
-        self.Tk = 0.2 / (1 - 0.2 * (1.0 % (1 / 0.2)))
+        if p!= 0:
+            self.Tk = p / (1 - p * (1.0 % (1 / p)))
+        else:
+            self.Tk = 0
         self.was_CH_in = -1

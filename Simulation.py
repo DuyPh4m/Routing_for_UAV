@@ -15,6 +15,8 @@ class Simulation(object):
         self.num = num
         self.rounds = rounds
         self.data = Data()
+        self.sink_node = None
+        self.p = 0.2
    
     def Run(self):
 
@@ -22,16 +24,25 @@ class Simulation(object):
 
         for r in range(self.num):
 
-            self.leach = LeachProtocol(p=0.2, min_per=0.1, max_per=0.2, data=self.data, round=r)
+            self.leach = LeachProtocol(p=self.p, min_per=0.1, max_per=0.2, data=self.data, round=r)
             # self.ant_colony = AntColonyOptimization(distances=self.distances, n_ants=1, n_best=1, n_iterations=100, decay=0.95, alpha=1, beta=1) 
             self.leach.Run()            
             # self.ant_colony.Run()
             
             self.Draw()
-
-            self.Add_CHs_2(round=r)
+            
+            # print("init")
+            # for node in self.data.CH_nodes:
+            #     print(node.id)
+            
+            self.Add_CHs(round=r)
 
             self.Draw()
+
+            # print("add")
+            # for node in self.data.CH_nodes:
+                # print(node.id)
+
             self.Data_Reset()
 
     def Generate_Nodes(self):
@@ -59,63 +70,16 @@ class Simulation(object):
                             break
 
                     if valid:
-                        node = Node(i * 5 + j , x, y)
+                        node = Node(i * 5 + j , x, y, self.p)
                         self.data.nodes.append(node)
                         self.data.norm_nodes.append(node)
                         break
 
+        self.sink_node = Node(-1, 120, 120)
+        self.sink_node.Tk = 0
+        self.data.nodes.append(self.sink_node)
+
     def Add_CHs(self, round):
-
-        H = nx.Graph()
-
-        for CH_node in self.data.CH_nodes:
-            H.add_node(CH_node.id, x=CH_node.x, y=CH_node.y, comm_range=CH_node.comm_range)
-        
-        for CH_node1 in self.data.CH_nodes:
-            for CH_node2 in self.data.CH_nodes:
-                if CH_node1 != CH_node2 and distance(CH_node1, CH_node2) <= CH_node1.comm_range:
-                    H.add_edge(CH_node1, CH_node2)
-
-        while nx.is_connected(H) == False:
-            
-            isolates = [node for node in self.data.norm_nodes if node.cluster_ID == None]
-
-            if len(isolates) == 0:
-                print("cant connect CHs")
-                return
-            
-            top_overlap = 0
-            chosen_one = None
-
-            for isolate in isolates:
-                temp = 0
-
-                for CH_node in self.data.CH_nodes:
-                    if distance(isolate, CH_node) <= CH_node.comm_range:
-                        temp += 1
-
-                if temp > top_overlap:
-                    top_overlap = temp
-                    chosen_one = isolate
-
-            if chosen_one == None:
-                print("cant connect CHs")
-                return
-
-            chosen_one.isCH = True
-            chosen_one.cluster_ID = chosen_one.id
-            chosen_one.was_CH_in = round
-
-            self.data.CH_nodes.append(chosen_one)
-            self.data.norm_nodes.remove(chosen_one)
-
-            H.add_node(chosen_one.id, x=chosen_one.x, y=chosen_one.y, comm_range=chosen_one.comm_range)
-
-            for CH_node in self.data.CH_nodes:
-                if CH_node != chosen_one and distance(CH_node, chosen_one) <= CH_node.comm_range:
-                    H.add_edge(CH_node.id, chosen_one.id)
-
-    def Add_CHs_2(self, round):
 
         H = nx.Graph()
 
@@ -131,28 +95,32 @@ class Simulation(object):
         for CH_node1 in self.data.CH_nodes:
             for CH_node2 in self.data.CH_nodes:
                 if CH_node1 != CH_node2 and distance(CH_node1, CH_node2) <= CH_node1.comm_range:
-                    H.add_edge(CH_node1, CH_node2)
+                    H.add_edge(CH_node1.id, CH_node2.id)
 
         while nx.is_connected(H) == False:
             
-            isolates = [node for node in self.data.nodes if node.cluster_ID == None]
+            # isolates = [node for node in self.data.nodes if node.cluster_ID == None]
+            candidates = [node for node in self.data.nodes if node not in self.data.CH_nodes]
 
-            if len(isolates) == 0:
+            if len(candidates) == 0:
                 return False
             
             closest_to_centroid = float('inf')
             chosen_one = None
 
-            for isolate in isolates:
+            for candidate in candidates:
                 
                 centroid_x = sum_x / len(self.data.CH_nodes)
                 centroid_y = sum_y / len(self.data.CH_nodes)
 
-                temp = math.sqrt((isolate.x - centroid_x)**2 + (isolate.y - centroid_y)**2)
+                temp = math.sqrt((candidate.x - centroid_x)**2 + (candidate.y - centroid_y)**2)
+                
+                # for CH_node in self.data.CH_nodes:
+                #     if distance(chosen_one, CH_node) < 30:
 
                 if temp < closest_to_centroid:
                     closest_to_centroid = temp
-                    chosen_one = isolate
+                    chosen_one = candidate
 
             if chosen_one == None:
                 return False
@@ -160,19 +128,23 @@ class Simulation(object):
             chosen_one.isCH = True
             chosen_one.cluster_ID = chosen_one.id
             chosen_one.was_CH_in = round
-
+            
+            # print("chosen: ", chosen_one.id)
+            
             self.data.CH_nodes.append(chosen_one)
+
             if chosen_one in self.data.norm_nodes:
                 self.data.norm_nodes.remove(chosen_one)
 
-            sum_x += chosen_one.x
-            sum_y += chosen_one.y
+            # sum_x += chosen_one.x
+            # sum_y += chosen_one.y
 
             H.add_node(chosen_one.id, x=chosen_one.x, y=chosen_one.y, comm_range=chosen_one.comm_range)
 
             for CH_node in self.data.CH_nodes:
                 if CH_node != chosen_one and distance(CH_node, chosen_one) <= CH_node.comm_range:
-                    H.add_edge(CH_node, chosen_one)
+                    H.add_edge(CH_node.id, chosen_one.id)
+    
 
     def Draw(self):
 
@@ -186,12 +158,17 @@ class Simulation(object):
 
                 if node.cluster_ID == CH_node.id and node.id != CH_node.id:
                     G.add_edge(node.id, CH_node.id, style='solid', edge_color='green')
+
+                if node.cluster_ID == None and node.id != CH_node.id and distance(node, CH_node) <= CH_node.sens_range:
+                    node.cluster_ID = CH_node.id
+                    G.add_edge(node.id, CH_node.id, style='solid', edge_color='green')
             
         for CH_node1 in self.data.CH_nodes:
 
             for CH_node2 in self.data.CH_nodes:
                 
                 if CH_node1.id != CH_node2.id:
+
                     dist = distance(CH_node1, CH_node2)
                     if dist < CH_node2.comm_range:
                         G.add_edge(CH_node1.id, CH_node2.id, style='solid', edge_color='red')
@@ -206,6 +183,7 @@ class Simulation(object):
         fig, ax = plt.subplots(figsize=(8, 8))
 
         for node in G.nodes():
+
             if G.nodes[node]["isCH"]:
                 
                 x = G.nodes[node].get("x")
