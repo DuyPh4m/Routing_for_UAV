@@ -115,4 +115,3 @@ class AntColonyOptimization(object):
         print(norm_row)
         move = np_choice(self.all_inds, 1, p=norm_row)[0]
         return move
-

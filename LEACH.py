@@ -101,4 +101,3 @@ class LeachProtocol(object):
                 
                 if min_dis <= node.sens_range:
                     node.cluster_ID = closest.id
-         

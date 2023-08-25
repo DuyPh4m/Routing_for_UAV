@@ -55,8 +55,8 @@ class Simulation(object):
 
                 while True:
 
-                    x = random.uniform(start_X, start_X + 20)
-                    y = random.uniform(start_Y, start_Y + 20)
+                    x = random.uniform(start_X, start_X + 30)
+                    y = random.uniform(start_Y, start_Y + 30)
                     valid = True
 
                     for node in self.data.norm_nodes:
@@ -75,7 +75,7 @@ class Simulation(object):
                         self.data.norm_nodes.append(node)
                         break
 
-        self.sink_node = Node(-1, 120, 120)
+        self.sink_node = Node(-1, 130, 130)
         self.sink_node.Tk = 0
         self.data.nodes.append(self.sink_node)
 
@@ -90,7 +90,6 @@ class Simulation(object):
             H.add_node(CH_node.id, x=CH_node.x, y=CH_node.y, comm_range=CH_node.comm_range)
             sum_x += CH_node.x
             sum_y += CH_node.y
-
         
         for CH_node1 in self.data.CH_nodes:
             for CH_node2 in self.data.CH_nodes:
@@ -144,7 +143,6 @@ class Simulation(object):
             for CH_node in self.data.CH_nodes:
                 if CH_node != chosen_one and distance(CH_node, chosen_one) <= CH_node.comm_range:
                     H.add_edge(CH_node.id, chosen_one.id)
-    
 
     def Draw(self):
 
