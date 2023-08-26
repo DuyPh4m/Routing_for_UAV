@@ -29,7 +29,6 @@ class AntColonyOptimization(object):
         self.beta = beta
 
     def Run(self):
-
         shortest_path = None
         all_time_shortest_path = ("placeholder", np.inf)
         
@@ -52,7 +51,6 @@ class AntColonyOptimization(object):
         return all_time_shortest_path
 
     def spread_pheronome(self, all_paths, n_best, shortest_path):
-
         sorted_paths = sorted(all_paths, key=lambda x: x[1])
 
         for path, dist in sorted_paths[:n_best]:
@@ -60,15 +58,13 @@ class AntColonyOptimization(object):
                 self.pheromone[move] += 1.0 / self.distances[move]
 
     def gen_path_dist(self, path):
-
         total_dist = 0
 
         for ele in path:
             total_dist += self.distances[ele]
         return total_dist
 
-    def gen_all_paths(self):
-        
+    def gen_all_paths(self):   
         all_paths = []
         for i in range(self.n_ants):
             path = self.gen_path(0)
@@ -79,7 +75,6 @@ class AntColonyOptimization(object):
         return all_paths
 
     def gen_path(self, start):
-
         path = []
         visited = set()
         visited.add(start)
@@ -95,8 +90,7 @@ class AntColonyOptimization(object):
         # path.append((prev, start)) # going back to where we started    
         return path
 
-    def pick_move(self, pheromone, dist, visited):
-        
+    def pick_move(self, pheromone, dist, visited):  
         pheromone = np.copy(pheromone)
         pheromone[list(visited)] = 0
         print("pheromone")
@@ -106,11 +100,7 @@ class AntColonyOptimization(object):
         row = pheromone ** self.alpha * (( 1.0 / dist) ** self.beta)
         print("row")
         print(row)
-        if row.any() != 0:
-            norm_row = row / row.sum()
-        if np.all(row == 0):
-            print("cant go further")
-            return -1
+        norm_row = row / row.sum()
         print("norm_row")
         print(norm_row)
         move = np_choice(self.all_inds, 1, p=norm_row)[0]

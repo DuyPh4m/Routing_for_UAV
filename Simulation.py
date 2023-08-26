@@ -19,7 +19,6 @@ class Simulation(object):
         self.p = 0.2
    
     def Run(self):
-
         self.Generate_Nodes()
 
         for r in range(self.num):
@@ -45,8 +44,7 @@ class Simulation(object):
 
             self.Data_Reset()
 
-    def Generate_Nodes(self):
-            
+    def Generate_Nodes(self): 
         for i in range(5):
             start_X = i * 20
 
@@ -75,12 +73,11 @@ class Simulation(object):
                         self.data.norm_nodes.append(node)
                         break
 
-        self.sink_node = Node(-1, 130, 130)
-        self.sink_node.Tk = 0
-        self.data.nodes.append(self.sink_node)
+        # self.sink_node = Node(-1, 130, 130)
+        # self.sink_node.Tk = 0
+        # self.data.nodes.append(self.sink_node)
 
     def Add_CHs(self, round):
-
         H = nx.Graph()
 
         sum_x = 0.0
@@ -145,7 +142,6 @@ class Simulation(object):
                     H.add_edge(CH_node.id, chosen_one.id)
 
     def Draw(self):
-
         G = nx.Graph()
 
         for node in self.data.nodes:
@@ -207,7 +203,6 @@ class Simulation(object):
         plt.show()
 
     def Data_Reset(self):
-
         for node in self.data.CH_nodes:
             node.isCH = False
             node.cluster_ID = None

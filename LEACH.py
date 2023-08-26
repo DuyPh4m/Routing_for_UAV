@@ -15,14 +15,12 @@ class LeachProtocol(object):
         self.clusters = []
        
     def Run(self):
-
         self.Select_CH()
         self.Form_Cluters()
         self.Update_Tk()
         self.Update_Norms()
 
     def Select_CH(self):
-
         num = len(self.data.nodes)
         current_amount = 0.0
 
@@ -54,7 +52,6 @@ class LeachProtocol(object):
                         current_amount += 1
 
     def Update_Tk(self):
-
         for node in self.data.nodes:
 
             if node in self.data.CH_nodes:
@@ -63,7 +60,6 @@ class LeachProtocol(object):
                 node.Tk = self.p / (1 - self.p * (float(self.round) % (1/ self.p)))
 
     def Update_Norms(self):
-
         self.p = 1 - len(self.data.norm_nodes) / len(self.data.nodes)
 
         if self.p < self.min_per:
@@ -81,7 +77,6 @@ class LeachProtocol(object):
                 node.cluster_ID = None
 
     def Form_Cluters(self):
-
         self.clusters.clear()
 
         for CH_node in self.data.CH_nodes:
