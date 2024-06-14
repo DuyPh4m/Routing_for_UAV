@@ -155,7 +155,7 @@ def round_simulation():
 
 def select_additional_CH(round):
     global nodes, CH_nodes, G, H
-    isolates = [node for node in nodes if node not in CH_nodes and node.cluster_id == None]
+    isolates = [node for node in nodes if node not in CH_nodes and node.cluster_id is None]
     ovlp_highest = 0
     chosen_one = None
 
@@ -170,7 +170,7 @@ def select_additional_CH(round):
         if temp > ovlp_highest:
             ovlp_highest = temp
             chosen_one = node
-    if chosen_one != None:
+    if chosen_one is not None:
         G.nodes[chosen_one.id]["cluster_head"] = True
         G.nodes[chosen_one.id]["cluster_id"] = chosen_one.id
         CH_nodes.append(chosen_one)
@@ -265,7 +265,7 @@ for round in range(rounds):
     nx.draw_networkx_edges(G, pos, edge_color=edge_colors, ax=ax, style=edge_styles)
     
     for node, (x, y) in pos.items():
-        if G.nodes[node]["cluster_head"] == True:
+        if G.nodes[node]["cluster_head"]:
             sens_range = G.nodes[node].get("sens_range")
             comm_range = G.nodes[node].get("comm_range")
             sens_circle = plt.Circle((x, y), sens_range, edgecolor="green", facecolor="none", linestyle="--")

@@ -92,7 +92,8 @@ class AntColonyOptimization(object):
 
     def pick_move(self, pheromone, dist, visited):  
         pheromone = np.copy(pheromone)
-        pheromone[list(visited)] = 0
+        visited = np.array(list(visited), dtype=int)
+        pheromone[visited] = 0
         print("pheromone")
         print(pheromone)
         print("dist")
@@ -100,7 +101,11 @@ class AntColonyOptimization(object):
         row = pheromone ** self.alpha * (( 1.0 / dist) ** self.beta)
         print("row")
         print(row)
-        norm_row = row / row.sum()
+        if row.sum() == 0:
+            norm_row = np.ones(row.shape) / len(row)
+        else:
+            norm_row = row / row.sum()
+        # norm_row = row / row.sum()
         print("norm_row")
         print(norm_row)
         move = np_choice(self.all_inds, 1, p=norm_row)[0]
